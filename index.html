@@ -22,10 +22,82 @@
       padding: 24px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* タイトルヘッダー */
+    .app-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #1e293b;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* ローディング表示 */
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 20px;
+      color: #64748b;
+      gap: 12px;
+      font-size: 0.95rem;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #0284c7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* コース選択画面（縦並び） */
+    .course-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .course-btn-vertical {
+      background-color: #ffffff;
+      color: #0284c7;
+      border: 2px solid #0284c7;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+    .course-btn-vertical:hover, .course-btn-vertical:active {
+      background-color: #0284c7;
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    /* 問題画面 */
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      color: #64748b;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
     .japanese-text {
       font-size: 1.25rem;
       font-weight: bold;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       color: #1a252c;
     }
     .section-label {
@@ -33,19 +105,33 @@
       color: #666;
       margin-bottom: 8px;
     }
-    /* 回答エリアと選択肢エリア */
-    .word-pool {
-      min-height: 80px;
+
+    /* 回答プール */
+    .answer-container {
+      position: relative;
       background-color: #f0f4f8;
       border: 2px dashed #cbd5e1;
       border-radius: 12px;
-      padding: 12px;
+      padding: 12px 36px 12px 12px;
+      min-height: 80px;
+      margin-bottom: 20px;
+    }
+    .word-pool {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       align-content: flex-start;
-      margin-bottom: 24px;
     }
+    .end-punctuation {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #64748b;
+      user-select: none;
+    }
+
     .options-pool {
       min-height: 80px;
       background-color: #ffffff;
@@ -55,9 +141,8 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
-    /* 単語チップボタン */
     .word-btn {
       background-color: #0284c7;
       color: white;
@@ -68,20 +153,13 @@
       border-radius: 8px;
       cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      transition: transform 0.1s, background-color 0.2s;
+      transition: transform 0.1s;
       user-select: none;
     }
-    .word-btn:active {
-      transform: scale(0.95);
-    }
-    .answer-pool .word-btn {
-      background-color: #0369a1;
-    }
-    /* 操作ボタン */
-    .actions {
-      display: flex;
-      gap: 12px;
-    }
+    .word-btn:active { transform: scale(0.95); }
+    .answer-pool .word-btn { background-color: #0369a1; }
+
+    .actions { display: flex; gap: 12px; }
     .btn {
       flex: 1;
       padding: 12px;
@@ -92,36 +170,138 @@
       cursor: pointer;
     }
     .btn-check { background-color: #22c55e; color: white; }
-    .btn-next { background-color: #64748b; color: white; }
-    /* 判定結果表示 */
+    .btn-next { background-color: #0284c7; color: white; }
+    .btn-restart { background-color: #64748b; color: white; width: 100%; margin-top: 24px; padding: 14px; font-size: 1.1rem; }
+
     .result-box {
-      margin-top: 20px;
-      padding: 16px;
+      margin-top: 16px;
+      padding: 14px;
       border-radius: 8px;
       display: none;
     }
     .result-box.correct { background-color: #dcfce7; color: #15803d; }
     .result-box.incorrect { background-color: #fee2e2; color: #b91c1c; }
     .hint-text { font-size: 0.9rem; margin-top: 6px; }
+
+    /* リザルト画面 */
+    .result-summary {
+      text-align: center;
+      padding: 20px 0;
+    }
+    .score-badge {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #0284c7;
+      margin: 10px 0;
+    }
+    .review-list {
+      margin-top: 20px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .review-item {
+      padding: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background-color: #f8fafc;
+    }
+    .review-item.is-correct { border-left: 6px solid #22c55e; }
+    .review-item.is-incorrect { border-left: 6px solid #ef4444; }
+
+    .review-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .status-icon { font-size: 1.1rem; }
+    .is-correct .status-icon { color: #22c55e; }
+    .is-incorrect .status-icon { color: #ef4444; }
+
+    .audio-btn {
+      background-color: #e0f2fe;
+      color: #0284c7;
+      border: 1px solid #bae6fd;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      transition: background-color 0.2s;
+    }
+    .audio-btn:hover { background-color: #bae6fd; }
+
+    .english-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      background-color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #f1f5f9;
+    }
+    .english-text {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 0.95rem;
+    }
+    .explanation-box {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #475569;
+      background-color: #f1f5f9;
+      padding: 8px 12px;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
 
 <div class="quiz-card">
-  <div id="loading">問題を読み込んでいます...</div>
   
-  <div id="quiz-container" style="display: none;">
+  <!-- 画面1: コース選択画面 -->
+  <div id="screen-select" class="screen active">
+    <div class="app-title">英文法 並べ替えクイズ</div>
+    <div class="section-label" id="select-label" style="text-align: center; display: none;">学習するコースを選択してください</div>
+    
+    <div id="loading-sheets" class="loading-container">
+      <div class="spinner"></div>
+      <span id="loading-text">全コースデータを読み込んでいます...</span>
+    </div>
+
+    <div class="course-list" id="course-list"></div>
+  </div>
+
+  <!-- 画面2: 問題画面 -->
+  <div id="screen-quiz" class="screen">
+    <div class="quiz-header">
+      <span id="current-course-name">コース名</span>
+      <span id="question-progress">1 / 5</span>
+    </div>
+
     <div class="japanese-text" id="japanese"></div>
 
     <div class="section-label">あなたの回答（タップして取り消し）</div>
-    <div class="word-pool answer-pool" id="answer-pool"></div>
+    <div class="answer-container">
+      <div class="word-pool answer-pool" id="answer-pool"></div>
+      <div class="end-punctuation" id="end-punctuation">.</div>
+    </div>
 
     <div class="section-label">単語を選んでタップ</div>
     <div class="options-pool" id="options-pool"></div>
 
     <div class="actions">
-      <button class="btn btn-check" onclick="checkAnswer()">答え合わせ</button>
-      <button class="btn btn-next" onclick="nextQuestion()">次の問題</button>
+      <button class="btn btn-check" id="btn-check" onclick="checkAnswer()">答え合わせ</button>
+      <button class="btn btn-next" id="btn-next" onclick="nextQuestion()" style="display: none;">次の問題へ</button>
     </div>
 
     <div class="result-box" id="result-box">
@@ -129,45 +309,175 @@
       <div class="hint-text" id="hint-text"></div>
     </div>
   </div>
+
+  <!-- 画面3: リザルト画面 -->
+  <div id="screen-result" class="screen">
+    <div class="app-title">クイズ結果</div>
+    <div class="result-summary">
+      <div>お疲れ様でした！</div>
+      <div class="score-badge" id="score-text">0 / 0</div>
+      <div id="score-percent">正解率: 0%</div>
+    </div>
+
+    <div class="review-list" id="review-list"></div>
+
+    <button class="btn btn-restart" onclick="showSelectScreen()">最初に戻る（コース選択）</button>
+  </div>
+
 </div>
 
 <script>
-  // ★ここにGASで取得したウェブアプリURLを貼り付けます★
-  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzSt4mAgND_ueBKWbcjcADmNER2fLVgWLnC8tTSewd8gLfwJGo53navcHyTsiKrYB9L/exec";
+  // ★ここにGASのウェブアプリURLを貼り付けます★
+  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwdf1W31n4E_sEqbWccUUNrCXCSwDby00U_FM5zqTWMU3mlfzKuPKjkqIWL_I5nQTWH/exec";
 
-  let questions = [];
-  let currentIndex = 0;
-  let userSelection = [];
-  let currentOptions = [];
+  // 効果音オブジェクトの準備
+  const soundCorrect = new Audio('correct.mp3');
+  const soundWrong = new Audio('wrong.mp3');
+  const soundFinish = new Audio('finish.mp3');
 
-  // スプレッドシートから問題データを取得
-  async function fetchQuestions() {
+  // 効果音を再生する関数
+  function playSound(audio) {
     try {
-      const res = await fetch(GAS_API_URL);
-      questions = await res.json();
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('quiz-container').style.display = 'block';
-      loadQuestion();
+      audio.currentTime = 0; // 連打に対応するため再生位置を最初に戻す
+      audio.play().catch(e => console.log('音声の再生が制限されました:', e));
     } catch (e) {
-      document.getElementById('loading').innerText = '問題の読み込みに失敗しました。';
       console.error(e);
     }
   }
 
-  // 問題のセットアップ
+  let allCourseData = {};
+  let questions = [];
+  let currentIndex = 0;
+  let userSelection = [];
+  let currentOptions = [];
+  let currentEndPunctuation = ".";
+  let activeCourseName = "";
+  let userResults = [];
+
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+  }
+
+  function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function capitalize(str) {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  async function init() {
+    showLoading('全コースデータを読み込んでいます...');
+    try {
+      const res = await fetch(`${GAS_API_URL}?type=all`);
+      allCourseData = await res.json();
+      
+      hideLoading();
+      document.getElementById('select-label').style.display = 'block';
+
+      renderCourseButtons();
+    } catch (e) {
+      console.error(e);
+      showLoadingError('データの読み込みに失敗しました。ページを再読み込みしてください。');
+    }
+  }
+
+  function renderCourseButtons() {
+    const container = document.getElementById('course-list');
+    container.innerHTML = '';
+
+    const courseNames = Object.keys(allCourseData);
+
+    if (courseNames.length > 0) {
+      courseNames.forEach(name => {
+        const btn = document.createElement('button');
+        btn.className = 'course-btn-vertical';
+        btn.innerText = name;
+        btn.onclick = () => startCourse(name);
+        container.appendChild(btn);
+      });
+    } else {
+      container.innerHTML = '<div style="color: #ef4444; text-align: center;">コースが見つかりません</div>';
+    }
+  }
+
+  function startCourse(sheetName) {
+    activeCourseName = sheetName;
+    userResults = [];
+    currentIndex = 0;
+
+    const rawQuestions = allCourseData[sheetName] || [];
+
+    if (rawQuestions.length === 0) {
+      alert('このコースには問題が登録されていません。');
+      return;
+    }
+
+    questions = shuffleArray(rawQuestions);
+
+    showScreen('screen-quiz');
+    loadQuestion();
+  }
+
+  function showLoading(text) {
+    const loadingElem = document.getElementById('loading-sheets');
+    document.getElementById('loading-text').innerText = text;
+    loadingElem.style.display = 'flex';
+  }
+
+  function hideLoading() {
+    document.getElementById('loading-sheets').style.display = 'none';
+  }
+
+  function showLoadingError(text) {
+    const loadingElem = document.getElementById('loading-sheets');
+    loadingElem.innerHTML = `<div style="color: #ef4444; font-weight: bold;">⚠️ ${text}</div>`;
+  }
+
   function loadQuestion() {
     const q = questions[currentIndex];
+    document.getElementById('current-course-name').innerText = activeCourseName;
+    document.getElementById('question-progress').innerText = `${currentIndex + 1} / ${questions.length}`;
     document.getElementById('japanese').innerText = q.japanese;
     
-    // 配列を複製してシャッフル
-    currentOptions = [...q.choices].sort(() => Math.random() - 0.5);
+    const trimmedEnglish = q.english.trim();
+    const lastChar = trimmedEnglish.slice(-1);
+    if (['.', '?', '!'].includes(lastChar)) {
+      currentEndPunctuation = lastChar;
+    } else {
+      currentEndPunctuation = '.';
+    }
+    document.getElementById('end-punctuation').innerText = currentEndPunctuation;
+
+    const rawChoices = (q.choices && q.choices.length > 0) 
+      ? q.choices 
+      : trimmedEnglish.replace(/[.?!]$/, '').split(/\s+/);
+
+    const formattedChoices = rawChoices.map(word => {
+      const cleanWord = String(word).trim().replace(/[.?!]$/, '');
+      return {
+        original: cleanWord,
+        clean: cleanWord
+      };
+    });
+
+    currentOptions = shuffleArray(formattedChoices);
     userSelection = [];
 
     document.getElementById('result-box').style.display = 'none';
+    document.getElementById('btn-check').style.display = 'block';
+    document.getElementById('btn-next').style.display = 'none';
+    
     render();
   }
 
-  // 画面の再描画
   function render() {
     const answerPool = document.getElementById('answer-pool');
     const optionsPool = document.getElementById('options-pool');
@@ -175,44 +485,71 @@
     answerPool.innerHTML = '';
     optionsPool.innerHTML = '';
 
-    // 回答エリアの描画
-    userSelection.forEach((word, idx) => {
+    userSelection.forEach((item, idx) => {
       const btn = document.createElement('button');
       btn.className = 'word-btn';
-      btn.innerText = word;
+      
+      let displayWord = item.original;
+      if (idx === 0) {
+        displayWord = capitalize(item.original);
+      }
+      
+      btn.innerText = displayWord;
       btn.onclick = () => deselectWord(idx);
       answerPool.appendChild(btn);
     });
 
-    // 選択肢エリアの描画
-    currentOptions.forEach((word, idx) => {
+    currentOptions.forEach((item, idx) => {
       const btn = document.createElement('button');
       btn.className = 'word-btn';
-      btn.innerText = word;
+      btn.innerText = item.original;
       btn.onclick = () => selectWord(idx);
       optionsPool.appendChild(btn);
     });
   }
 
-  // 単語を選択（下から上へ移動）
   function selectWord(index) {
-    const word = currentOptions.splice(index, 1)[0];
-    userSelection.push(word);
+    const item = currentOptions.splice(index, 1)[0];
+    userSelection.push(item);
     render();
   }
 
-  // 単語を取り消し（上から下へ戻す）
   function deselectWord(index) {
-    const word = userSelection.splice(index, 1)[0];
-    currentOptions.push(word);
+    const item = userSelection.splice(index, 1)[0];
+    currentOptions.push(item);
     render();
   }
 
-  // 正誤判定
+  // 答え合わせ判定
   function checkAnswer() {
     const q = questions[currentIndex];
-    const userSentence = userSelection.join(' ');
-    const correctSentence = q.english;
+    
+    let builtWords = userSelection.map((item, idx) => {
+      return (idx === 0) ? capitalize(item.original) : item.original;
+    });
+
+    let userSentence = builtWords.join(' ');
+    
+    if (!userSentence.endsWith(currentEndPunctuation)) {
+      userSentence += currentEndPunctuation;
+    }
+
+    const targetEnglish = q.english.trim();
+    const isCorrect = (userSentence.toLowerCase() === targetEnglish.toLowerCase());
+
+    // ★正誤に応じた効果音の再生★
+    if (isCorrect) {
+      playSound(soundCorrect);
+    } else {
+      playSound(soundWrong);
+    }
+
+    userResults.push({
+      japanese: q.japanese,
+      english: targetEnglish,
+      hint: q.hint,
+      isCorrect: isCorrect
+    });
 
     const resultBox = document.getElementById('result-box');
     const resultTitle = document.getElementById('result-title');
@@ -220,25 +557,89 @@
 
     resultBox.style.display = 'block';
 
-    if (userSentence === correctSentence) {
+    if (isCorrect) {
       resultBox.className = 'result-box correct';
       resultTitle.innerText = '⭕️ 正解！';
       hintText.innerText = q.hint ? `解説: ${q.hint}` : '';
     } else {
       resultBox.className = 'result-box incorrect';
       resultTitle.innerText = '❌ 不正解...';
-      hintText.innerText = `正解: ${q.english}`;
+      hintText.innerText = `正解: ${targetEnglish}`;
+    }
+
+    document.getElementById('btn-check').style.display = 'none';
+    document.getElementById('btn-next').style.display = 'block';
+  }
+
+  function nextQuestion() {
+    currentIndex++;
+    if (currentIndex < questions.length) {
+      loadQuestion();
+    } else {
+      showResultScreen();
     }
   }
 
-  // 次の問題へ
-  function nextQuestion() {
-    currentIndex = (currentIndex + 1) % questions.length;
-    loadQuestion();
+  function showResultScreen() {
+    showScreen('screen-result');
+
+    // ★全問解き終わってリザルト画面に移行した時の効果音★
+    playSound(soundFinish);
+
+    const correctCount = userResults.filter(r => r.isCorrect).length;
+    const totalCount = userResults.length;
+    const percent = Math.round((correctCount / totalCount) * 100);
+
+    document.getElementById('score-text').innerText = `${correctCount} / ${totalCount}`;
+    document.getElementById('score-percent').innerText = `正解率: ${percent}%`;
+
+    const reviewList = document.getElementById('review-list');
+    reviewList.innerHTML = '';
+
+    userResults.forEach((r, idx) => {
+      const item = document.createElement('div');
+      item.className = `review-item ${r.isCorrect ? 'is-correct' : 'is-incorrect'}`;
+      
+      const hintHtml = r.hint ? `<div class="explanation-box">💡 <b>解説:</b> ${r.hint}</div>` : '';
+
+      item.innerHTML = `
+        <div class="review-header">
+          <span class="status-icon">${r.isCorrect ? '⭕️' : '❌'}</span>
+          <span>Q${idx + 1}. ${r.japanese}</span>
+        </div>
+        <div class="english-row">
+          <button class="audio-btn" title="英文を読み上げる" onclick="speakText('${escapeQuotes(r.english)}')">🔊</button>
+          <span class="english-text">${r.english}</span>
+        </div>
+        ${hintHtml}
+      `;
+      reviewList.appendChild(item);
+    });
   }
 
-  // 初期化開始
-  fetchQuestions();
+  function speakText(text) {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+
+      const uttr = new SpeechSynthesisUtterance(text);
+      uttr.lang = 'en-US';
+      uttr.rate = 0.9;
+      window.speechSynthesis.speak(uttr);
+    } else {
+      alert('お使いのブラウザは音声読み上げに対応していません。');
+    }
+  }
+
+  function escapeQuotes(str) {
+    return str.replace(/'/g, "\\'");
+  }
+
+  function showSelectScreen() {
+    showScreen('screen-select');
+    renderCourseButtons();
+  }
+
+  init();
 </script>
 
 </body>
