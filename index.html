@@ -33,6 +33,112 @@
       margin-bottom: 20px;
     }
 
+    /* 学習履歴セクションのスタイル */
+    .dashboard-card {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .dashboard-title {
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #334155;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chart-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      height: 120px;
+      padding-top: 20px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #cbd5e1;
+      margin-bottom: 8px;
+    }
+    .bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      cursor: pointer;
+    }
+    .bar-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      height: 100%;
+    }
+    .bar {
+      width: 60%;
+      max-width: 24px;
+      background-color: #cbd5e1;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.3s ease, background-color 0.2s ease;
+      min-height: 4px;
+    }
+    .bar-group.active .bar {
+      background-color: #0284c7 !important;
+      box-shadow: 0 0 0 2px #38bdf8;
+    }
+    .bar-group:hover .bar {
+      filter: brightness(0.9);
+    }
+    .bar-label {
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: #64748b;
+      margin-top: 6px;
+    }
+    .bar-group.today .bar-label {
+      color: #0284c7;
+    }
+
+    /* 日別詳細パネル */
+    .history-detail {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 0.85rem;
+    }
+    .detail-header {
+      font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 6px;
+      border-bottom: 1px dashed #e2e8f0;
+      padding-bottom: 4px;
+    }
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      color: #475569;
+    }
+    .detail-item .unit-name {
+      font-weight: 600;
+      color: #0f172a;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 200px;
+    }
+    .no-data-text {
+      color: #94a3b8;
+      font-style: italic;
+      text-align: center;
+      padding: 6px 0;
+    }
+
     .loading-container {
       display: flex;
       flex-direction: column;
@@ -277,11 +383,26 @@
   <!-- 画面1: 学年・コース選択画面 -->
   <div id="screen-files" class="screen active">
     <div class="app-title">英文法 並べ替えクイズ</div>
+
+    <!-- 1週間の取り組み棒グラフ（学年選択画面の1番上） -->
+    <div class="dashboard-card">
+      <div class="dashboard-title">
+        <span>📊 今週の学習状況</span>
+        <span style="font-size: 0.75rem; font-weight: normal; color: #64748b;">タップで詳細を表示</span>
+      </div>
+      <div class="chart-container" id="weekly-chart">
+        <!-- JSで日〜土の7つの棒を生成 -->
+      </div>
+      <div class="history-detail" id="chart-detail">
+        <!-- タップされた日の詳細を表示 -->
+      </div>
+    </div>
+
     <div class="section-label" style="text-align: center;">学年・コースを選択してください</div>
 
     <div id="loading-files" class="loading-container">
       <div class="spinner"></div>
-      <span>コース一覧を読み込んでいます...</span>
+      <span>データを一括読み込み中...</span>
     </div>
 
     <div class="btn-vertical-list" id="file-list"></div>
@@ -292,11 +413,6 @@
     <button class="btn-back" onclick="showFileSelectScreen()">← コース選択に戻る</button>
     <div class="app-title" id="selected-file-title">単元選択</div>
     <div class="section-label" style="text-align: center;">単元を選択してください</div>
-
-    <div id="loading-sheets" class="loading-container" style="display: none;">
-      <div class="spinner"></div>
-      <span>単元データを読み込んでいます...</span>
-    </div>
 
     <div class="btn-vertical-list" id="sheet-list"></div>
   </div>
@@ -347,21 +463,12 @@
 </div>
 
 <script>
-  // ★GASのウェブアプリURL★
-  const GAS_API_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
-
-  // ★読み込みたいスプレッドシートのURL（またはID）をここに並べるだけ★
-  const SPREADSHEET_URLS = [
-    "https://script.google.com/macros/s/AKfycbxuicTDSfid7XKaNSEnsTMzEoPvfmgS2zzw8E_-gtGYEbZnb5uL_XOTeg4HbebnGe6t/exec",
-    "https://script.google.com/macros/s/AKfycbxH8EPz68f1i4D0s1UVBVcDbqTjGqs5M6QjW9Thr2rFYNkJ7X5uX_8NpRhcIouM_GTz/exec"
+  // ★読み込む GAS の Web アプリ URL（カンマ区切りで複数指定可能）★
+  const GAS_API_URLS = [
+    "https://script.google.com/macros/s/AKfycby2EiUBeIayrMJO6xHfzvxxuaz2rFp5eLTaRw4bcSq71BCRZ0mYIIHwpDPy6PE-xizz/exec",
+    "https://script.google.com/macros/s/AKfycbyJiQ6U8s6-GS6zTaXuKJlNGxiZBCSF9mBk7BUytPG1wf0JoBjl1g8ljCccEJ4beXVd/exec"
+    // "https://script.google.com/macros/s/3つ目のGASのURL/exec"
   ];
-
-  // URLからSpreadsheet IDを抽出するヘルパー関数
-  function extractFileId(urlOrId) {
-    if (!urlOrId) return "";
-    const match = urlOrId.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    return match ? match[1] : urlOrId.trim();
-  }
 
   // 効果音オブジェクト
   const soundCorrect = new Audio('correct.mp3');
@@ -377,8 +484,9 @@
     }
   }
 
-  let fileList = [];
-  let currentFileSheetsData = {};
+  // キャッシュ用変数
+  let coursesData = [];
+  let selectedCourseIndex = -1;
   let questions = [];
   let currentIndex = 0;
   let userSelection = [];
@@ -387,6 +495,8 @@
   let activeFileName = "";
   let activeSheetName = "";
   let userResults = [];
+
+  const DAYS_OF_WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 
   function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -407,43 +517,184 @@
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  // 初期化：スプレッドシートのファイル名一覧を自動取得
+  // 今週（日曜日〜土曜日）の日付文字列(YYYY-MM-DD)リストを取得
+  function getThisWeekDates() {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0(日) - 6(土)
+    const sunday = new Date(now);
+    sunday.setDate(now.getDate() - dayOfWeek);
+
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sunday);
+      d.setDate(sunday.getDate() + i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const date = String(d.getDate()).padStart(2, '0');
+      weekDates.push(`${year}-${month}-${date}`);
+    }
+    return weekDates;
+  }
+
+  // 1週間の棒グラフの描画と更新
+  function renderWeeklyChart(selectedDateStr = null) {
+    const weekDates = getThisWeekDates();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const historyData = JSON.parse(localStorage.getItem('quiz_study_history') || '{}');
+
+    if (!selectedDateStr) {
+      selectedDateStr = todayStr; // デフォルトは今日を選択
+    }
+
+    // 週間データの最大問題数を求める（グラフの高さの基準）
+    let maxQuestions = 10; // 最低基準値
+    weekDates.forEach(dateStr => {
+      const dayLogs = historyData[dateStr] || [];
+      const totalQ = dayLogs.reduce((sum, log) => sum + log.total, 0);
+      if (totalQ > maxQuestions) maxQuestions = totalQ;
+    });
+
+    const chartContainer = document.getElementById('weekly-chart');
+    chartContainer.innerHTML = '';
+
+    weekDates.forEach((dateStr, idx) => {
+      const dayLogs = historyData[dateStr] || [];
+      const totalQ = dayLogs.reduce((sum, log) => sum + log.total, 0);
+      const heightPercent = totalQ > 0 ? Math.max(10, Math.min(100, (totalQ / maxQuestions) * 100)) : 0;
+
+      const group = document.createElement('div');
+      group.className = `bar-group ${dateStr === todayStr ? 'today' : ''} ${dateStr === selectedDateStr ? 'active' : ''}`;
+      group.onclick = () => renderWeeklyChart(dateStr);
+
+      const barColor = totalQ > 0 ? '#38bdf8' : '#e2e8f0';
+
+      group.innerHTML = `
+        <div class="bar-wrapper">
+          <div class="bar" style="height: ${heightPercent}%; background-color: ${barColor};"></div>
+        </div>
+        <div class="bar-label">${DAYS_OF_WEEK[idx]}</div>
+      `;
+      chartContainer.appendChild(group);
+    });
+
+    renderChartDetail(selectedDateStr, historyData[selectedDateStr] || []);
+  }
+
+  // グラフ下部の詳細エリアを描画
+  function renderChartDetail(dateStr, dayLogs) {
+    const detailBox = document.getElementById('chart-detail');
+    const [y, m, d] = dateStr.split('-');
+    const dateObj = new Date(dateStr);
+    const dayName = DAYS_OF_WEEK[dateObj.getDay()];
+
+    let html = `<div class="detail-header">📅 ${parseInt(m)}月${parseInt(d)}日 (${dayName}) の取り組み</div>`;
+
+    if (dayLogs.length === 0) {
+      html += `<div class="no-data-text">学習記録はありません</div>`;
+    } else {
+      let dayTotalQ = 0;
+      let dayCorrectQ = 0;
+
+      dayLogs.forEach(log => {
+        dayTotalQ += log.total;
+        dayCorrectQ += log.correct;
+        const rate = Math.round((log.correct / log.total) * 100);
+        html += `
+          <div class="detail-item">
+            <span class="unit-name" title="${log.course} - ${log.unit}">${log.course} : ${log.unit}</span>
+            <span>${log.total}問中 <b>${log.correct}問正解</b> (${rate}%)</span>
+          </div>
+        `;
+      });
+
+      const dayRate = Math.round((dayCorrectQ / dayTotalQ) * 100);
+      html += `
+        <div class="detail-item" style="border-top: 1px solid #e2e8f0; margin-top: 6px; padding-top: 6px; font-weight: bold; color: #0284c7;">
+          <span>1日の合計正答率</span>
+          <span>${dayTotalQ}問 / ${dayRate}%</span>
+        </div>
+      `;
+    }
+
+    detailBox.innerHTML = html;
+  }
+
+  // 学習履歴をローカルストレージに保存
+  function saveStudyHistory(courseName, unitName, correctCount, totalCount) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const historyData = JSON.parse(localStorage.getItem('quiz_study_history') || '{}');
+
+    if (!historyData[todayStr]) {
+      historyData[todayStr] = [];
+    }
+
+    historyData[todayStr].push({
+      course: courseName,
+      unit: unitName,
+      correct: correctCount,
+      total: totalCount,
+      timestamp: new Date().getTime()
+    });
+
+    localStorage.setItem('quiz_study_history', JSON.stringify(historyData));
+  }
+
+  // 初期化：アクセスタイミングで全データと履歴グラフを取得
   async function init() {
     showScreen('screen-files');
+    renderWeeklyChart(); // グラフ表示
+
     document.getElementById('loading-files').style.display = 'flex';
     document.getElementById('file-list').innerHTML = '';
 
-    const fileIds = SPREADSHEET_URLS.map(url => extractFileId(url)).filter(id => id !== "");
-
-    if (fileIds.length === 0) {
-      document.getElementById('loading-files').innerHTML = '<div style="color: red;">スプレッドシートURLが設定されていません</div>';
+    if (!Array.isArray(GAS_API_URLS) || GAS_API_URLS.length === 0) {
+      document.getElementById('loading-files').innerHTML = '<div style="color: red;">GASのURLが設定されていません</div>';
       return;
     }
 
     try {
-      // GAS経由でファイル名を自動取得
-      const res = await fetch(`${GAS_API_URL}?type=filenames&fileIds=${encodeURIComponent(fileIds.join(','))}`);
-      fileList = await res.json();
+      const requests = GAS_API_URLS.map(async (apiUrl) => {
+        try {
+          const cleanUrl = apiUrl.trim();
+          const [infoRes, dataRes] = await Promise.all([
+            fetch(`${cleanUrl}?type=info`),
+            fetch(cleanUrl)
+          ]);
+
+          const info = await infoRes.json();
+          const sheetsData = await dataRes.json();
+
+          return {
+            name: info.name || "名称未設定",
+            sheetsData: sheetsData
+          };
+        } catch (err) {
+          console.error("データのプリロード失敗:", apiUrl, err);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(requests);
+      coursesData = results.filter(item => item !== null);
 
       document.getElementById('loading-files').style.display = 'none';
       renderFileList();
     } catch (e) {
       console.error(e);
-      document.getElementById('loading-files').innerHTML = '<div style="color: red;">コース一覧の読み込みに失敗しました</div>';
+      document.getElementById('loading-files').innerHTML = '<div style="color: red;">全データの読み込みに失敗しました</div>';
     }
   }
 
-  // 1. コース（スプレッドシート）一覧の描画
   function renderFileList() {
     const container = document.getElementById('file-list');
     container.innerHTML = '';
 
-    if (Array.isArray(fileList) && fileList.length > 0) {
-      fileList.forEach(file => {
+    if (Array.isArray(coursesData) && coursesData.length > 0) {
+      coursesData.forEach((course, index) => {
         const btn = document.createElement('button');
         btn.className = 'btn-vertical';
-        btn.innerText = file.name; // GASから取得した「ファイル名」が表示されます
-        btn.onclick = () => selectFile(file);
+        btn.innerText = course.name;
+        btn.onclick = () => selectCourse(index);
         container.appendChild(btn);
       });
     } else {
@@ -451,33 +702,24 @@
     }
   }
 
-  // コースが選択された時：そのスプレッドシートの全シートデータを取得
-  async function selectFile(file) {
-    activeFileName = file.name;
-    document.getElementById('selected-file-title').innerText = file.name;
+  function selectCourse(index) {
+    selectedCourseIndex = index;
+    const course = coursesData[index];
+    activeFileName = course.name;
+
+    document.getElementById('selected-file-title').innerText = course.name;
     showScreen('screen-sheets');
-    
-    document.getElementById('loading-sheets').style.display = 'flex';
-    document.getElementById('sheet-list').innerHTML = '';
-
-    try {
-      const res = await fetch(`${GAS_API_URL}?fileId=${file.id}`);
-      currentFileSheetsData = await res.json();
-
-      document.getElementById('loading-sheets').style.display = 'none';
-      renderSheetList();
-    } catch (e) {
-      console.error(e);
-      document.getElementById('loading-sheets').innerHTML = '<div style="color: red;">単元データの読み込みに失敗しました</div>';
-    }
+    renderSheetList();
   }
 
-  // 2. 単元（シート）一覧の描画
   function renderSheetList() {
     const container = document.getElementById('sheet-list');
     container.innerHTML = '';
 
-    const sheetNames = Object.keys(currentFileSheetsData);
+    const course = coursesData[selectedCourseIndex];
+    if (!course || !course.sheetsData) return;
+
+    const sheetNames = Object.keys(course.sheetsData);
 
     if (sheetNames.length > 0) {
       sheetNames.forEach(name => {
@@ -492,13 +734,13 @@
     }
   }
 
-  // 3. 単元クイズ開始
   function startSheetQuiz(sheetName) {
     activeSheetName = sheetName;
     userResults = [];
     currentIndex = 0;
 
-    const rawQuestions = currentFileSheetsData[sheetName] || [];
+    const course = coursesData[selectedCourseIndex];
+    const rawQuestions = course.sheetsData[sheetName] || [];
 
     if (rawQuestions.length === 0) {
       alert('この単元には問題が登録されていません。');
@@ -513,6 +755,7 @@
 
   function showFileSelectScreen() {
     showScreen('screen-files');
+    renderWeeklyChart(); // 画面に戻ってきた際にグラフを更新
   }
 
   function loadQuestion() {
@@ -659,6 +902,9 @@
     const correctCount = userResults.filter(r => r.isCorrect).length;
     const totalCount = userResults.length;
     const percent = Math.round((correctCount / totalCount) * 100);
+
+    // ★今回の解答データをローカルストレージに保存
+    saveStudyHistory(activeFileName, activeSheetName, correctCount, totalCount);
 
     document.getElementById('score-text').innerText = `${correctCount} / ${totalCount}`;
     document.getElementById('score-percent').innerText = `正解率: ${percent}%`;
