@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英文法 並べ替えクイズ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f5f7fb;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .quiz-card {
+      background: white;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .japanese-text {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-bottom: 24px;
+      color: #1a252c;
+    }
+    .section-label {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    /* 回答エリアと選択肢エリア */
+    .word-pool {
+      min-height: 80px;
+      background-color: #f0f4f8;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-content: flex-start;
+      margin-bottom: 24px;
+    }
+    .options-pool {
+      min-height: 80px;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    /* 単語チップボタン */
+    .word-btn {
+      background-color: #0284c7;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.1s, background-color 0.2s;
+      user-select: none;
+    }
+    .word-btn:active {
+      transform: scale(0.95);
+    }
+    .answer-pool .word-btn {
+      background-color: #0369a1;
+    }
+    /* 操作ボタン */
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-check { background-color: #22c55e; color: white; }
+    .btn-next { background-color: #64748b; color: white; }
+    /* 判定結果表示 */
+    .result-box {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      display: none;
+    }
+    .result-box.correct { background-color: #dcfce7; color: #15803d; }
+    .result-box.incorrect { background-color: #fee2e2; color: #b91c1c; }
+    .hint-text { font-size: 0.9rem; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+<div class="quiz-card">
+  <div id="loading">問題を読み込んでいます...</div>
+  
+  <div id="quiz-container" style="display: none;">
+    <div class="japanese-text" id="japanese"></div>
+
+    <div class="section-label">あなたの回答（タップして取り消し）</div>
+    <div class="word-pool answer-pool" id="answer-pool"></div>
+
+    <div class="section-label">単語を選んでタップ</div>
+    <div class="options-pool" id="options-pool"></div>
+
+    <div class="actions">
+      <button class="btn btn-check" onclick="checkAnswer()">答え合わせ</button>
+      <button class="btn btn-next" onclick="nextQuestion()">次の問題</button>
+    </div>
+
+    <div class="result-box" id="result-box">
+      <div id="result-title" style="font-weight: bold; font-size: 1.1rem;"></div>
+      <div class="hint-text" id="hint-text"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ★ここにGASで取得したウェブアプリURLを貼り付けます★
+  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxHnFsQMV_muS6wTLllDMLI7rHATX0Uxjw-9DQ-C9nPESCotk8idYCVunERkRHOu-IT/exec";
+
+  let questions = [];
+  let currentIndex = 0;
+  let userSelection = [];
+  let currentOptions = [];
+
+  // スプレッドシートから問題データを取得
+  async function fetchQuestions() {
+    try {
+      const res = await fetch(GAS_API_URL);
+      questions = await res.json();
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('quiz-container').style.display = 'block';
+      loadQuestion();
+    } catch (e) {
+      document.getElementById('loading').innerText = '問題の読み込みに失敗しました。';
+      console.error(e);
+    }
+  }
+
+  // 問題のセットアップ
+  function loadQuestion() {
+    const q = questions[currentIndex];
+    document.getElementById('japanese').innerText = q.japanese;
+    
+    // 配列を複製してシャッフル
+    currentOptions = [...q.choices].sort(() => Math.random() - 0.5);
+    userSelection = [];
+
+    document.getElementById('result-box').style.display = 'none';
+    render();
+  }
+
+  // 画面の再描画
+  function render() {
+    const answerPool = document.getElementById('answer-pool');
+    const optionsPool = document.getElementById('options-pool');
+
+    answerPool.innerHTML = '';
+    optionsPool.innerHTML = '';
+
+    // 回答エリアの描画
+    userSelection.forEach((word, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'word-btn';
+      btn.innerText = word;
+      btn.onclick = () => deselectWord(idx);
+      answerPool.appendChild(btn);
+    });
+
+    // 選択肢エリアの描画
+    currentOptions.forEach((word, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'word-btn';
+      btn.innerText = word;
+      btn.onclick = () => selectWord(idx);
+      optionsPool.appendChild(btn);
+    });
+  }
+
+  // 単語を選択（下から上へ移動）
+  function selectWord(index) {
+    const word = currentOptions.splice(index, 1)[0];
+    userSelection.push(word);
+    render();
+  }
+
+  // 単語を取り消し（上から下へ戻す）
+  function deselectWord(index) {
+    const word = userSelection.splice(index, 1)[0];
+    currentOptions.push(word);
+    render();
+  }
+
+  // 正誤判定
+  function checkAnswer() {
+    const q = questions[currentIndex];
+    const userSentence = userSelection.join(' ');
+    const correctSentence = q.english;
+
+    const resultBox = document.getElementById('result-box');
+    const resultTitle = document.getElementById('result-title');
+    const hintText = document.getElementById('hint-text');
+
+    resultBox.style.display = 'block';
+
+    if (userSentence === correctSentence) {
+      resultBox.className = 'result-box correct';
+      resultTitle.innerText = '⭕️ 正解！';
+      hintText.innerText = q.hint ? `解説: ${q.hint}` : '';
+    } else {
+      resultBox.className = 'result-box incorrect';
+      resultTitle.innerText = '❌ 不正解...';
+      hintText.innerText = `正解: ${q.english}`;
+    }
+  }
+
+  // 次の問題へ
+  function nextQuestion() {
+    currentIndex = (currentIndex + 1) % questions.length;
+    loadQuestion();
+  }
+
+  // 初期化開始
+  fetchQuestions();
+</script>
+
+</body>
+</html>
