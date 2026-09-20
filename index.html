@@ -25,7 +25,6 @@
     .screen { display: none; }
     .screen.active { display: block; }
 
-    /* タイトルヘッダー */
     .app-title {
       font-size: 1.5rem;
       font-weight: bold;
@@ -34,7 +33,6 @@
       margin-bottom: 20px;
     }
 
-    /* ローディング表示 */
     .loading-container {
       display: flex;
       flex-direction: column;
@@ -58,14 +56,13 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* コース選択画面（縦並び） */
-    .course-list {
+    .btn-vertical-list {
       display: flex;
       flex-direction: column;
       gap: 12px;
       margin-top: 16px;
     }
-    .course-btn-vertical {
+    .btn-vertical {
       background-color: #ffffff;
       color: #0284c7;
       border: 2px solid #0284c7;
@@ -78,13 +75,24 @@
       transition: all 0.2s ease;
       box-shadow: 0 2px 4px rgba(0,0,0,0.04);
     }
-    .course-btn-vertical:hover, .course-btn-vertical:active {
+    .btn-vertical:hover, .btn-vertical:active {
       background-color: #0284c7;
       color: white;
       transform: translateY(-2px);
     }
 
-    /* 問題画面 */
+    .btn-back {
+      background-color: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+
     .quiz-header {
       display: flex;
       justify-content: space-between;
@@ -106,7 +114,6 @@
       margin-bottom: 8px;
     }
 
-    /* 回答プール */
     .answer-container {
       position: relative;
       background-color: #f0f4f8;
@@ -183,7 +190,6 @@
     .result-box.incorrect { background-color: #fee2e2; color: #b91c1c; }
     .hint-text { font-size: 0.9rem; margin-top: 6px; }
 
-    /* リザルト画面 */
     .result-summary {
       text-align: center;
       padding: 20px 0;
@@ -268,23 +274,37 @@
 
 <div class="quiz-card">
   
-  <!-- 画面1: コース選択画面 -->
-  <div id="screen-select" class="screen active">
+  <!-- 画面1: 学年・コース選択画面 -->
+  <div id="screen-files" class="screen active">
     <div class="app-title">英文法 並べ替えクイズ</div>
-    <div class="section-label" id="select-label" style="text-align: center; display: none;">学習するコースを選択してください</div>
-    
-    <div id="loading-sheets" class="loading-container">
+    <div class="section-label" style="text-align: center;">学年・コースを選択してください</div>
+
+    <div id="loading-files" class="loading-container">
       <div class="spinner"></div>
-      <span id="loading-text">全コースデータを読み込んでいます...</span>
+      <span>コース一覧を読み込んでいます...</span>
     </div>
 
-    <div class="course-list" id="course-list"></div>
+    <div class="btn-vertical-list" id="file-list"></div>
   </div>
 
-  <!-- 画面2: 問題画面 -->
+  <!-- 画面2: 単元選択画面（シート選択） -->
+  <div id="screen-sheets" class="screen">
+    <button class="btn-back" onclick="showFileSelectScreen()">← コース選択に戻る</button>
+    <div class="app-title" id="selected-file-title">単元選択</div>
+    <div class="section-label" style="text-align: center;">単元を選択してください</div>
+
+    <div id="loading-sheets" class="loading-container" style="display: none;">
+      <div class="spinner"></div>
+      <span>単元データを読み込んでいます...</span>
+    </div>
+
+    <div class="btn-vertical-list" id="sheet-list"></div>
+  </div>
+
+  <!-- 画面3: 問題画面 -->
   <div id="screen-quiz" class="screen">
     <div class="quiz-header">
-      <span id="current-course-name">コース名</span>
+      <span id="current-course-name">単元名</span>
       <span id="question-progress">1 / 5</span>
     </div>
 
@@ -310,7 +330,7 @@
     </div>
   </div>
 
-  <!-- 画面3: リザルト画面 -->
+  <!-- 画面4: リザルト画面 -->
   <div id="screen-result" class="screen">
     <div class="app-title">クイズ結果</div>
     <div class="result-summary">
@@ -321,37 +341,51 @@
 
     <div class="review-list" id="review-list"></div>
 
-    <button class="btn btn-restart" onclick="showSelectScreen()">最初に戻る（コース選択）</button>
+    <button class="btn btn-restart" onclick="showFileSelectScreen()">最初に戻る（コース選択へ）</button>
   </div>
 
 </div>
 
 <script>
-  // ★ここにGASのウェブアプリURLを貼り付けます★
-  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwdf1W31n4E_sEqbWccUUNrCXCSwDby00U_FM5zqTWMU3mlfzKuPKjkqIWL_I5nQTWH/exec";
+  // ★GASのウェブアプリURL★
+  const GAS_API_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
 
-  // 効果音オブジェクトの準備
+  // ★読み込みたいスプレッドシートのURL（またはID）をここに並べるだけ★
+  const SPREADSHEET_URLS = [
+    "https://script.google.com/macros/s/AKfycbxuicTDSfid7XKaNSEnsTMzEoPvfmgS2zzw8E_-gtGYEbZnb5uL_XOTeg4HbebnGe6t/exec",
+    "https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID_2/edit"
+  ];
+
+  // URLからSpreadsheet IDを抽出するヘルパー関数
+  function extractFileId(urlOrId) {
+    if (!urlOrId) return "";
+    const match = urlOrId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    return match ? match[1] : urlOrId.trim();
+  }
+
+  // 効果音オブジェクト
   const soundCorrect = new Audio('correct.mp3');
   const soundWrong = new Audio('wrong.mp3');
   const soundFinish = new Audio('finish.mp3');
 
-  // 効果音を再生する関数
   function playSound(audio) {
     try {
-      audio.currentTime = 0; // 連打に対応するため再生位置を最初に戻す
-      audio.play().catch(e => console.log('音声の再生が制限されました:', e));
+      audio.currentTime = 0;
+      audio.play().catch(e => console.log('音声再生ブロック:', e));
     } catch (e) {
       console.error(e);
     }
   }
 
-  let allCourseData = {};
+  let fileList = [];
+  let currentFileSheetsData = {};
   let questions = [];
   let currentIndex = 0;
   let userSelection = [];
   let currentOptions = [];
   let currentEndPunctuation = ".";
-  let activeCourseName = "";
+  let activeFileName = "";
+  let activeSheetName = "";
   let userResults = [];
 
   function showScreen(screenId) {
@@ -373,50 +407,101 @@
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  // 初期化：スプレッドシートのファイル名一覧を自動取得
   async function init() {
-    showLoading('全コースデータを読み込んでいます...');
-    try {
-      const res = await fetch(`${GAS_API_URL}?type=all`);
-      allCourseData = await res.json();
-      
-      hideLoading();
-      document.getElementById('select-label').style.display = 'block';
+    showScreen('screen-files');
+    document.getElementById('loading-files').style.display = 'flex';
+    document.getElementById('file-list').innerHTML = '';
 
-      renderCourseButtons();
+    const fileIds = SPREADSHEET_URLS.map(url => extractFileId(url)).filter(id => id !== "");
+
+    if (fileIds.length === 0) {
+      document.getElementById('loading-files').innerHTML = '<div style="color: red;">スプレッドシートURLが設定されていません</div>';
+      return;
+    }
+
+    try {
+      // GAS経由でファイル名を自動取得
+      const res = await fetch(`${GAS_API_URL}?type=filenames&fileIds=${encodeURIComponent(fileIds.join(','))}`);
+      fileList = await res.json();
+
+      document.getElementById('loading-files').style.display = 'none';
+      renderFileList();
     } catch (e) {
       console.error(e);
-      showLoadingError('データの読み込みに失敗しました。ページを再読み込みしてください。');
+      document.getElementById('loading-files').innerHTML = '<div style="color: red;">コース一覧の読み込みに失敗しました</div>';
     }
   }
 
-  function renderCourseButtons() {
-    const container = document.getElementById('course-list');
+  // 1. コース（スプレッドシート）一覧の描画
+  function renderFileList() {
+    const container = document.getElementById('file-list');
     container.innerHTML = '';
 
-    const courseNames = Object.keys(allCourseData);
-
-    if (courseNames.length > 0) {
-      courseNames.forEach(name => {
+    if (Array.isArray(fileList) && fileList.length > 0) {
+      fileList.forEach(file => {
         const btn = document.createElement('button');
-        btn.className = 'course-btn-vertical';
-        btn.innerText = name;
-        btn.onclick = () => startCourse(name);
+        btn.className = 'btn-vertical';
+        btn.innerText = file.name; // GASから取得した「ファイル名」が表示されます
+        btn.onclick = () => selectFile(file);
         container.appendChild(btn);
       });
     } else {
-      container.innerHTML = '<div style="color: #ef4444; text-align: center;">コースが見つかりません</div>';
+      container.innerHTML = '<div style="text-align:center; color:red;">コースが見つかりません</div>';
     }
   }
 
-  function startCourse(sheetName) {
-    activeCourseName = sheetName;
+  // コースが選択された時：そのスプレッドシートの全シートデータを取得
+  async function selectFile(file) {
+    activeFileName = file.name;
+    document.getElementById('selected-file-title').innerText = file.name;
+    showScreen('screen-sheets');
+    
+    document.getElementById('loading-sheets').style.display = 'flex';
+    document.getElementById('sheet-list').innerHTML = '';
+
+    try {
+      const res = await fetch(`${GAS_API_URL}?fileId=${file.id}`);
+      currentFileSheetsData = await res.json();
+
+      document.getElementById('loading-sheets').style.display = 'none';
+      renderSheetList();
+    } catch (e) {
+      console.error(e);
+      document.getElementById('loading-sheets').innerHTML = '<div style="color: red;">単元データの読み込みに失敗しました</div>';
+    }
+  }
+
+  // 2. 単元（シート）一覧の描画
+  function renderSheetList() {
+    const container = document.getElementById('sheet-list');
+    container.innerHTML = '';
+
+    const sheetNames = Object.keys(currentFileSheetsData);
+
+    if (sheetNames.length > 0) {
+      sheetNames.forEach(name => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-vertical';
+        btn.innerText = name;
+        btn.onclick = () => startSheetQuiz(name);
+        container.appendChild(btn);
+      });
+    } else {
+      container.innerHTML = '<div style="text-align:center; color:red;">単元が見つかりません</div>';
+    }
+  }
+
+  // 3. 単元クイズ開始
+  function startSheetQuiz(sheetName) {
+    activeSheetName = sheetName;
     userResults = [];
     currentIndex = 0;
 
-    const rawQuestions = allCourseData[sheetName] || [];
+    const rawQuestions = currentFileSheetsData[sheetName] || [];
 
     if (rawQuestions.length === 0) {
-      alert('このコースには問題が登録されていません。');
+      alert('この単元には問題が登録されていません。');
       return;
     }
 
@@ -426,24 +511,13 @@
     loadQuestion();
   }
 
-  function showLoading(text) {
-    const loadingElem = document.getElementById('loading-sheets');
-    document.getElementById('loading-text').innerText = text;
-    loadingElem.style.display = 'flex';
-  }
-
-  function hideLoading() {
-    document.getElementById('loading-sheets').style.display = 'none';
-  }
-
-  function showLoadingError(text) {
-    const loadingElem = document.getElementById('loading-sheets');
-    loadingElem.innerHTML = `<div style="color: #ef4444; font-weight: bold;">⚠️ ${text}</div>`;
+  function showFileSelectScreen() {
+    showScreen('screen-files');
   }
 
   function loadQuestion() {
     const q = questions[currentIndex];
-    document.getElementById('current-course-name').innerText = activeCourseName;
+    document.getElementById('current-course-name').innerText = `${activeFileName} ➔ ${activeSheetName}`;
     document.getElementById('question-progress').innerText = `${currentIndex + 1} / ${questions.length}`;
     document.getElementById('japanese').innerText = q.japanese;
     
@@ -520,7 +594,6 @@
     render();
   }
 
-  // 答え合わせ判定
   function checkAnswer() {
     const q = questions[currentIndex];
     
@@ -537,7 +610,6 @@
     const targetEnglish = q.english.trim();
     const isCorrect = (userSentence.toLowerCase() === targetEnglish.toLowerCase());
 
-    // ★正誤に応じた効果音の再生★
     if (isCorrect) {
       playSound(soundCorrect);
     } else {
@@ -582,8 +654,6 @@
 
   function showResultScreen() {
     showScreen('screen-result');
-
-    // ★全問解き終わってリザルト画面に移行した時の効果音★
     playSound(soundFinish);
 
     const correctCount = userResults.filter(r => r.isCorrect).length;
@@ -632,11 +702,6 @@
 
   function escapeQuotes(str) {
     return str.replace(/'/g, "\\'");
-  }
-
-  function showSelectScreen() {
-    showScreen('screen-select');
-    renderCourseButtons();
   }
 
   init();
